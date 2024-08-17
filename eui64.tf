@@ -82,7 +82,7 @@ output "eui64" {
   value       = local.eui64_identifier
 }
 
-output "ipv6_eui64_address_shortened" {
+output "ipv6_eui64_address" {
   description = "Shortened IPv6 EUI-64 address"
   value       = local.ipv6_eui64_address_shortened
 }

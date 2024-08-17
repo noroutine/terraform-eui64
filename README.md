@@ -14,7 +14,48 @@ The IPv6 EUI-64 format address is obtained through the 48-bit MAC address as exp
 
 ## How to use
 
+### Using as a module
+
+Can be used as a module as per below example
+
+```terraform
+
+module "eui64" {
+  for_each    = var.instances
+  source      = "git::https://github.com/noroutine/terraform-eui64.git"
+  mac_address = proxmox_virtual_environment_vm.vm[each.key].mac_addresses[0]
+  ipv6_prefix = "2001:db8:1:2::/64"
+}
+
+resource "local_file" "inventory" {
+  for_each = var.instances
+  filename = "${path.root}/terraform_inventory/${each.key}.yaml"
+  content = templatefile("${path.module}/inventory.tpl", {
+    name                           = each.value["name"],
+    macaddress                     = lower(proxmox_virtual_environment_vm.vm[each.key].mac_addresses[0]),
+    eui64                          = module.eui64[each.key].eui64,
+    ipv6_eui64_address             = module.eui64[each.key].ipv6_eui64_address_shortened,
+  })
+}
+
+
+resource "proxmox_virtual_environment_vm" "vm" {
+  for_each  = var.instances
+  # ...
+}
+
+variable "instances" {
+  type    = map(any)
+  default = {}
+}
+
 ```
+
+### Using as is
+```
+git clone https://github.com/noroutine/terraform-eui64.git eui64
+
+cd eui64
 terraform init
 terraform apply -auto-approve \
   -var "mac_address=02:00:00:00:16:15" -var "ipv6_prefix=fe80::/10"
@@ -32,7 +73,7 @@ Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 Outputs:
 
 eui64 = "000000fffe001615"
-ipv6_eui64_address_shortened = "fe80::ff:fe00:1615"
+ipv6_eui64_address = "fe80::ff:fe00:1615"
 ```
 
 This should potentially match the link-local IPv6 address on the node with given MAC address
@@ -40,7 +81,6 @@ This should potentially match the link-local IPv6 address on the node with given
 <p align="center">
 <img src="images/example.png" width=800/>
 </p>
-
 
 ### Example with real MAC
 
@@ -51,7 +91,7 @@ terraform apply -auto-approve \
   -var "mac_address=98:03:9b:82:db:c6" -var "ipv6_prefix=fe80::/10"
 # ...
 eui64 = "9a039bfffe82dbc6"
-ipv6_eui64_address_shortened = "fe80::9a03:9bff:fe82:dbc6"
+ipv6_eui64_address = "fe80::9a03:9bff:fe82:dbc6"
 ```
 
 <p align="center">
